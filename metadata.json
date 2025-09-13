@@ -1,5 +1,5 @@
 {
-  "name": "Gemini AI Clone",
+  "name": "AI",
   "description": "A sophisticated AI chat application that mirrors the functionality and aesthetics of Google's Gemini, built with React and the Gemini API for real-time, streaming responses.",
   "requestFramePermissions": []
 }

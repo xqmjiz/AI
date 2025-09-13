@@ -1,17 +1,49 @@
 import { GoogleGenAI, Content } from '@google/genai';
 
-// Ensure the API key is available. In a real-world scenario, you'd have more robust error handling.
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable not set.");
+let ai: GoogleGenAI | null = null;
+let initError: Error | null = null;
+
+// Attempt to initialize the Gemini AI client, but capture any errors
+// instead of letting them crash the application.
+if (process.env.API_KEY) {
+    try {
+        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    } catch (e) {
+        initError = e instanceof Error ? e : new Error('Failed to initialize GoogleGenAI client.');
+        console.error("Gemini Initialization Error:", initError);
+    }
+} else {
+    initError = new Error("API_KEY environment variable not set. Please configure it in your Vercel project settings.");
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+/**
+ * A utility function for the UI to check if the API key was successfully configured.
+ * @returns An error message string if initialization failed, otherwise null.
+ */
+export const getApiKeyError = (): string | null => {
+    return initError ? initError.message : null;
+};
+
+/**
+ * A helper function to get the initialized AI instance or throw an error.
+ * This is used by all functions that make API calls.
+ * @returns The initialized GoogleGenAI instance.
+ */
+const getAiInstance = (): GoogleGenAI => {
+    if (initError || !ai) {
+        // This error will be caught by the calling function's try/catch block.
+        throw initError || new Error("Gemini AI client is not initialized.");
+    }
+    return ai;
+}
+
 
 // This service is now stateless regarding chat history.
 // The history is managed in the UI and passed to each call.
 
 export const streamChatResponse = async (message: string, history: Content[]) => {
   try {
+    const ai = getAiInstance();
     const contents = [...history, { role: 'user', parts: [{ text: message }] }];
     const result = await ai.models.generateContentStream({
       model: 'gemini-2.5-flash',
@@ -31,6 +63,7 @@ export const streamChatResponse = async (message: string, history: Content[]) =>
 
 export const generateImage = async (prompt: string): Promise<string> => {
   try {
+    const ai = getAiInstance();
     const response = await ai.models.generateImages({
       model: 'imagen-4.0-generate-001',
       prompt: prompt,
@@ -53,6 +86,7 @@ export const generateImage = async (prompt: string): Promise<string> => {
 
 export const generateRefinedPrompt = async (originalPrompt: string, modification: string): Promise<string> => {
   try {
+    const ai = getAiInstance();
     const systemInstruction = `You are a prompt analysis and rewriting assistant. Your task is to determine if a user's new message is a request to modify their previous image prompt.
 
 - If the new message is a clear request to modify or add to the previous prompt, rewrite the prompt to incorporate the changes and output ONLY the new, rewritten prompt.

@@ -1,10 +1,9 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import type { ChatMessage, Attachment, GroundingChunk, ChatSession } from './types';
 import ChatWindow from './components/ChatWindow';
 import MessageInput from './components/MessageInput';
 import Sidebar from './components/Sidebar';
-import { streamChatResponse, generateImage, generateRefinedPrompt } from './services/geminiService';
+import { streamChatResponse, generateImage, generateRefinedPrompt, getApiKeyError } from './services/geminiService';
 import type { GenerateContentResponse, Content } from '@google/genai';
 
 // Helper to convert our ChatMessage format to Gemini's Content format
@@ -25,8 +24,17 @@ const App: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [editingMessage, setEditingMessage] = useState<{ id: string; content: string } | null>(null);
+    const [apiKeyError, setApiKeyError] = useState<string | null>(null);
     const isCancelledRef = useRef(false);
     
+    // Check for API Key configuration error on initial load
+    useEffect(() => {
+        const errorMsg = getApiKeyError();
+        if (errorMsg) {
+            setApiKeyError(errorMsg);
+        }
+    }, []);
+
     // Load sessions from localStorage on initial render
     useEffect(() => {
         try {
@@ -268,6 +276,25 @@ const App: React.FC = () => {
             s.id === sessionId ? { ...s, isPinned } : s
         ));
     }, []);
+    
+    // If there's an API key error, render a dedicated error screen
+    if (apiKeyError) {
+        return (
+            <div className="flex h-screen bg-background text-text-primary font-sans items-center justify-center p-4">
+                <div className="bg-surface p-8 rounded-lg shadow-lg max-w-lg text-center animate-fade-in">
+                    <h1 className="text-2xl font-bold text-red-400 mb-4">Configuration Error</h1>
+                    <p className="text-text-secondary mb-4">The application could not start. Please check the configuration.</p>
+                    <code className="block bg-background p-3 rounded-md text-left text-sm text-red-300 whitespace-pre-wrap">
+                        {apiKeyError}
+                    </code>
+                    <p className="text-text-secondary mt-6 text-sm">
+                       Please ensure the <code>API_KEY</code> environment variable is set correctly in your Vercel project settings and redeploy the application.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
 
     return (
         <div className="flex h-screen bg-background text-text-primary font-sans">

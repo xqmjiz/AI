@@ -124,9 +124,9 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, isLoading, o
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="相談する"
+            placeholder="メッセージを入力"
             rows={1}
-            className="w-full bg-transparent p-3 text-text-primary placeholder-text-secondary resize-none focus:outline-none max-h-48"
+            className="w-full bg-transparent p-3 text-text-primary placeholder-text-secondary resize-none focus:outline-none max-h-48 no-scrollbar"
           />
           <input
             type="file"
